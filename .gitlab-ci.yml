@@ -1,0 +1,79 @@
+# Light CI for the AV Tools Grafana dashboards + alert rulegroups.
+#
+# Split out of the `av-tools` app repo on purpose: there, a dashboard change had
+# to drag through the whole heavy pipeline (koji RPM build + full test suite +
+# integration + e2e, ~20 stages, no `needs:` DAG) before the light JSON-push
+# could even start. Here it's just: validate JSON, then push to Grafana.
+#
+# Required CI/CD variables (Settings -> CI/CD -> Variables, masked):
+#   GRAFANA_API_TOKEN_QA    - Grafana service-account token for the QA folder
+#   GRAFANA_API_TOKEN_PROD  - Grafana service-account token for the PROD folder
+#
+# The push scripts (scripts/sync_grafana_*.sh) come verbatim from av-tools and
+# resolve dashboards at ../grafana/dashboard/{qa,prod} relative to scripts/ —
+# which is why the content lives under grafana/ in this repo.
+
+stages:
+  - validate
+  - deploy
+
+validate_json:
+  stage: validate
+  image: python:3.11-slim
+  script:
+    - |
+      python - <<'PY'
+      import json, glob, sys
+      bad = 0
+      for f in glob.glob("grafana/**/*.json", recursive=True):
+          try:
+              json.load(open(f))
+          except Exception as e:
+              print(f"INVALID: {f}: {e}"); bad += 1
+      print("checked", len(glob.glob("grafana/**/*.json", recursive=True)), "files")
+      sys.exit(1 if bad else 0)
+      PY
+
+.grafana-deploy:
+  stage: deploy
+  image: python:3.11-slim
+  before_script:
+    - apt-get update -qq && apt-get install -y --no-install-recommends curl ca-certificates
+    - chmod +x scripts/*.sh
+
+# QA: manual, on the qa branch or on a tag (validate a release in QA first).
+deploy_qa:
+  extends: .grafana-deploy
+  environment:
+    name: grafana/qa
+    url: https://monit-grafana.cern.ch/dashboards/f/7BZSQJX4z/?orgId=12
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "qa"'
+      when: manual
+      allow_failure: true
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+      allow_failure: true
+    - when: never
+  script:
+    - |
+      : "${GRAFANA_API_TOKEN_QA:?set GRAFANA_API_TOKEN_QA in Settings -> CI/CD -> Variables}"
+      export GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN_QA"
+    - ./scripts/sync_grafana_dashboards.sh put qa
+    - ./scripts/sync_grafana_rulegroup_qa.sh
+
+# PROD: manual, tag-only.
+deploy_prod:
+  extends: .grafana-deploy
+  environment:
+    name: grafana/prod
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: manual
+    - when: never
+  script:
+    - |
+      : "${GRAFANA_API_TOKEN_PROD:?set GRAFANA_API_TOKEN_PROD in Settings -> CI/CD -> Variables}"
+      export GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN_PROD"
+    - ./scripts/sync_grafana_dashboards.sh put prod
+    - ./scripts/sync_grafana_rulegroup.sh
