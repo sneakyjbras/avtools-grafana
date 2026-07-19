@@ -60,7 +60,7 @@ deploy_qa:
       : "${GRAFANA_API_TOKEN_QA:?set GRAFANA_API_TOKEN_QA in Settings -> CI/CD -> Variables}"
       export GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN_QA"
     - ./scripts/sync_grafana_dashboards.sh put qa
-    - ./scripts/sync_grafana_rulegroup_qa.sh
+    - ./scripts/sync_grafana_rulegroup_qa.sh put
 
 # PROD: manual, tag-only.
 deploy_prod:
@@ -76,4 +76,4 @@ deploy_prod:
       : "${GRAFANA_API_TOKEN_PROD:?set GRAFANA_API_TOKEN_PROD in Settings -> CI/CD -> Variables}"
       export GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN_PROD"
     - ./scripts/sync_grafana_dashboards.sh put prod
-    - ./scripts/sync_grafana_rulegroup.sh
+    - ./scripts/sync_grafana_rulegroup.sh prod
