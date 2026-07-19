@@ -975,7 +975,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -1069,7 +1069,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -1336,7 +1336,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))*1000)",
+          "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))*1000)",
           "instant": true,
           "range": false
         }
@@ -1600,7 +1600,8 @@
           }
         ]
       },
-      "interval": "15m"
+      "interval": "15m",
+      "maxDataPoints": 100
     },
     {
       "id": 120,
@@ -1803,7 +1804,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_projector_query_lamp_hours{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_projector_query_lamp_hours{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -1891,7 +1892,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_projector_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_projector_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2004,7 +2005,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_healthy{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_healthy{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2093,7 +2094,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_input_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_input_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2169,7 +2170,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_line_current_amps{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_line_current_amps{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2246,7 +2247,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_current_utilized_pct{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_current_utilized_pct{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2331,7 +2332,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_active_power_watts{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_active_power_watts{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2408,7 +2409,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_voltage_volts{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_voltage_volts{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2485,7 +2486,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2562,7 +2563,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{firmware}}",
-          "expr": "last_over_time(avtools_pdu_query_firmware_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_firmware_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -2637,7 +2638,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{status}}",
-          "expr": "last_over_time(avtools_pdu_query_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -2726,7 +2727,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_codec_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_codec_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -2888,7 +2889,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_matrix_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_matrix_query_uptime_seconds{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3067,7 +3068,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_energy_kwh{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_energy_kwh{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3144,7 +3145,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_frequency_hz{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_frequency_hz{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3221,7 +3222,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_power_factor{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_power_factor{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3298,7 +3299,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_apparent_power_va{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_apparent_power_va{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3375,7 +3376,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_out_of_balance_pct{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+          "expr": "max by (equipmentno) (last_over_time(avtools_pdu_query_out_of_balance_pct{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
           "instant": true,
           "range": false
         }
@@ -3452,7 +3453,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{status}}",
-          "expr": "last_over_time(avtools_pdu_query_active_power_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_active_power_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -3527,7 +3528,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{status}}",
-          "expr": "last_over_time(avtools_pdu_query_power_factor_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_power_factor_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -3602,7 +3603,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{status}}",
-          "expr": "last_over_time(avtools_pdu_query_balance_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_balance_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -3677,7 +3678,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "{{status}}",
-          "expr": "last_over_time(avtools_pdu_query_load_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])",
+          "expr": "last_over_time(avtools_pdu_query_load_status_info{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])",
           "instant": true,
           "range": false
         }
@@ -3929,7 +3930,8 @@
           "sort": "none"
         }
       },
-      "interval": "15m"
+      "interval": "15m",
+      "maxDataPoints": 100
     },
     {
       "id": 191,
@@ -3984,7 +3986,8 @@
           "sort": "none"
         }
       },
-      "interval": "15m"
+      "interval": "15m",
+      "maxDataPoints": 100
     },
     {
       "id": 200,
@@ -4220,7 +4223,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))*1000)",
+              "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))*1000)",
               "range": true,
               "instant": false
             }
@@ -4283,7 +4286,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "min by (equipmentno) ((time() - timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d])))/60)",
+              "expr": "min by (equipmentno) ((time() - timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])))/60)",
               "range": true,
               "instant": false
             }
@@ -4354,7 +4357,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[30d]))",
+              "expr": "max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
               "range": true,
               "instant": false
             }
@@ -4511,7 +4514,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 206,
@@ -4576,7 +4580,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 207,
@@ -4641,7 +4646,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 208,
@@ -4706,7 +4712,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 209,
@@ -4771,7 +4778,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 210,
@@ -4838,7 +4846,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 211,
@@ -4905,7 +4914,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 212,
@@ -4970,7 +4980,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 213,
@@ -5035,7 +5046,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 214,
@@ -5100,7 +5112,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         },
         {
           "id": 215,
@@ -5165,7 +5178,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         }
       ]
     }

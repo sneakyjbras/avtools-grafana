@@ -610,7 +610,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -624,7 +624,7 @@
           "refId": "C",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -638,7 +638,7 @@
           "refId": "E",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (timestamp(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[30d]))) * 1000",
+          "expr": "max by(equipmentno) (timestamp(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))) * 1000",
           "format": "table",
           "instant": true,
           "range": false,
@@ -989,7 +989,8 @@
       ],
       "title": "Room Connectivity \u2014 Over Time",
       "type": "timeseries",
-      "interval": "15m"
+      "interval": "15m",
+      "maxDataPoints": 100
     },
     {
       "datasource": {
@@ -1140,7 +1141,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -1365,7 +1366,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -2143,7 +2144,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -2389,7 +2390,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[30d]))",
+          "expr": "max by(equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
           "format": "table",
           "instant": true,
           "range": false,
@@ -4242,7 +4243,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[30d]))) - count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[6h]))) - count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
               "range": true,
               "instant": false
             }
@@ -4377,7 +4378,8 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m"
+          "interval": "15m",
+          "maxDataPoints": 100
         }
       ]
     }
