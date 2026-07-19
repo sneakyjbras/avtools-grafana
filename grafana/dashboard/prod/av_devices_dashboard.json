@@ -942,7 +942,7 @@
           "refId": "A",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+          "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Connected"
@@ -955,7 +955,7 @@
           "refId": "A1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+          "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Online"
@@ -968,7 +968,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+          "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Monitorable"
@@ -981,7 +981,7 @@
           "refId": "B1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+          "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Snmp"
@@ -989,7 +989,7 @@
       ],
       "title": "Room Connectivity \u2014 Over Time",
       "type": "timeseries",
-      "interval": "15m",
+      "interval": "5m",
       "maxDataPoints": 100
     },
     {
@@ -4054,7 +4054,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false
             }
@@ -4117,7 +4117,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false
             }
@@ -4160,7 +4160,7 @@
         {
           "id": 49,
           "type": "stat",
-          "title": "Reporting in 15m (selected)",
+          "title": "Reporting in 5m (selected)",
           "datasource": {
             "type": "prometheus",
             "uid": "afcql1n10tnggc"
@@ -4180,7 +4180,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false
             }
@@ -4223,7 +4223,7 @@
         {
           "id": 50,
           "type": "stat",
-          "title": "Stale (no sample 15m)",
+          "title": "Stale (no sample 5m)",
           "datasource": {
             "type": "prometheus",
             "uid": "afcql1n10tnggc"
@@ -4243,7 +4243,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[6h]))) - count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[6h]))) - count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false
             }
@@ -4314,7 +4314,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false,
               "legendFormat": "ping reporting"
@@ -4326,7 +4326,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false,
               "legendFormat": "snmp reporting"
@@ -4338,7 +4338,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[15m])))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"prod\"}[5m])))",
               "range": true,
               "instant": false,
               "legendFormat": "ping online"
@@ -4378,13 +4378,13 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "15m",
+          "interval": "5m",
           "maxDataPoints": 100
         }
       ]
     }
   ],
-  "refresh": "15m",
+  "refresh": "5m",
   "schemaVersion": 40,
   "tags": [
     "av",

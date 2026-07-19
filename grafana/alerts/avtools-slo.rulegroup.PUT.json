@@ -213,7 +213,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-slo",
-      "title": "AV SLO: SNMP Collection Stale (No Cycle in 30m)",
+      "title": "AV SLO: SNMP Collection Stale (No Cycle in 10m)",
       "condition": "Active",
       "data": [
         {
@@ -230,7 +230,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\"}[30m])",
+            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\"}[10m])",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -288,7 +288,7 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- SNMP freshness SLO\n  No avtools_snmp_devices_targeted sample in 30m (~2 missed 15-min cycles) => the snmp-timeseries collection has stalled.\n  Action: check the snmp-timeseries CronJob.",
+        "description": "- SNMP freshness SLO\n  No avtools_snmp_devices_targeted sample in 10m (~2 missed 5-min cycles) => the snmp-timeseries collection has stalled.\n  Action: check the snmp-timeseries CronJob.",
         "summary": "No SNMP collection cycle has completed in the last 5 minutes"
       },
       "labels": {
@@ -315,7 +315,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-slo",
-      "title": "AV SLO: EAM Inventory Sync Stale (No Success in 30m)",
+      "title": "AV SLO: EAM Inventory Sync Stale (No Success in 10m)",
       "condition": "Active",
       "data": [
         {
@@ -332,7 +332,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "absent_over_time(avtools_eam_last_run_timestamp{submitter_environment=\"prod\"}[30m])",
+            "expr": "absent_over_time(avtools_eam_last_run_timestamp{submitter_environment=\"prod\"}[10m])",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -390,7 +390,7 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- EAM freshness SLO\n  No EAM heartbeat in 30m (~2 missed 15-min runs). The device truth list may be going stale while SNMP coverage still reads healthy.\n  Action: check the run-eam CronJob.",
+        "description": "- EAM freshness SLO\n  No EAM heartbeat in 10m (~2 missed 5-min runs). The device truth list may be going stale while SNMP coverage still reads healthy.\n  Action: check the run-eam CronJob.",
         "summary": "No successful EAM inventory sync in the last 10 minutes"
       },
       "labels": {
@@ -417,7 +417,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-slo",
-      "title": "AV SLO: LanDB Inventory Sync Stale (No Success in 30m)",
+      "title": "AV SLO: LanDB Inventory Sync Stale (No Success in 10m)",
       "condition": "Active",
       "data": [
         {
@@ -434,7 +434,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "absent_over_time(avtools_landb_last_run_timestamp{submitter_environment=\"prod\"}[30m])",
+            "expr": "absent_over_time(avtools_landb_last_run_timestamp{submitter_environment=\"prod\"}[10m])",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -492,7 +492,7 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- LanDB freshness SLO\n  No LanDB heartbeat in 30m (~2 missed 15-min runs). The networked-device join may be stale => SNMP could be polling a wrong/stale target set while coverage reads 1.0.\n  Action: check the run-landb CronJob.",
+        "description": "- LanDB freshness SLO\n  No LanDB heartbeat in 10m (~2 missed 5-min runs). The networked-device join may be stale => SNMP could be polling a wrong/stale target set while coverage reads 1.0.\n  Action: check the run-landb CronJob.",
         "summary": "No successful LanDB inventory sync in the last 10 minutes"
       },
       "labels": {
