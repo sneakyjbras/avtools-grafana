@@ -111,7 +111,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-k8s-slo",
-      "title": "AV SLO: Sweep Over Freshness Budget (Slowest Shard > 200s)",
+      "title": "AV SLO: Sweep Over Freshness Budget (Slowest Shard > 500s)",
       "condition": "Active",
       "data": [
         {
@@ -128,7 +128,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\"}) > 200",
+            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\"}) > 500",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -186,8 +186,8 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Sweep-budget SLO (freshness objective)\n  The slowest shard's collection (sweep) phase exceeded the 200s freshness budget for a sustained period (headroom under the 240s activeDeadlineSeconds). Freshness is bounded by the slowest shard, so this is the leading indicator that the 5-min cycle objective is regressing.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads. Tune the 200s threshold to your actual freshness target.",
-        "summary": "Slowest shard sweep {{ $values.C.Value }}s exceeds the 200s freshness budget"
+        "description": "- Sweep-budget SLO (freshness objective)\n  The slowest shard's collection (sweep) phase exceeded the 500s freshness budget for a sustained period (headroom under the 600s activeDeadlineSeconds). Freshness is bounded by the slowest shard, so this is the leading indicator that the 15-min cycle objective is regressing.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads. Tune the 500s threshold to your actual freshness target.",
+        "summary": "Slowest shard sweep {{ $values.C.Value }}s exceeds the 500s freshness budget"
       },
       "labels": {
         "av_alert_type": "slo",

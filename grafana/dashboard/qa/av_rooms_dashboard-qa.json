@@ -1164,7 +1164,7 @@
           "refId": "A",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"qa\"}[10m])))",
+          "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"qa\"}[15m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Connected"
@@ -1177,7 +1177,7 @@
           "refId": "A1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"qa\"}[10m])))",
+          "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"qa\"}[15m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Online"
@@ -1190,7 +1190,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"qa\"}[10m])))",
+          "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"qa\"}[15m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Monitorable"
@@ -1203,7 +1203,7 @@
           "refId": "B1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"qa\"}[10m])))",
+          "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"qa\"}[15m])))",
           "instant": false,
           "range": true,
           "legendFormat": "Snmp"
@@ -1211,7 +1211,7 @@
       ],
       "title": "Fleet Connectivity \u2014 Over Time",
       "type": "timeseries",
-      "interval": "10m"
+      "interval": "15m"
     },
     {
       "datasource": {
@@ -4153,7 +4153,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "10m"
+          "interval": "15m"
         },
         {
           "id": 32,
@@ -4230,12 +4230,12 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "10m"
+          "interval": "15m"
         }
       ]
     }
   ],
-  "refresh": "5m",
+  "refresh": "15m",
   "schemaVersion": 40,
   "tags": [
     "av",
