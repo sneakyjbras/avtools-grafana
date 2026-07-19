@@ -1600,7 +1600,7 @@
           }
         ]
       },
-      "interval": "5m"
+      "interval": "10m"
     },
     {
       "id": 120,
@@ -3929,7 +3929,7 @@
           "sort": "none"
         }
       },
-      "interval": "5m"
+      "interval": "10m"
     },
     {
       "id": 191,
@@ -3984,7 +3984,7 @@
           "sort": "none"
         }
       },
-      "interval": "5m"
+      "interval": "10m"
     },
     {
       "id": 200,
@@ -4511,7 +4511,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 206,
@@ -4576,7 +4576,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 207,
@@ -4641,7 +4641,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 208,
@@ -4706,7 +4706,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 209,
@@ -4771,7 +4771,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 210,
@@ -4838,7 +4838,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 211,
@@ -4905,7 +4905,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 212,
@@ -4970,7 +4970,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 213,
@@ -5035,7 +5035,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 214,
@@ -5100,7 +5100,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         },
         {
           "id": 215,
@@ -5165,7 +5165,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         }
       ]
     }

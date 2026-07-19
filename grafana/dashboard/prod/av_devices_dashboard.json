@@ -989,7 +989,7 @@
       ],
       "title": "Room Connectivity \u2014 Over Time",
       "type": "timeseries",
-      "interval": "5m"
+      "interval": "10m"
     },
     {
       "datasource": {
@@ -4377,7 +4377,7 @@
             }
           },
           "pluginVersion": "11.0.0",
-          "interval": "5m"
+          "interval": "10m"
         }
       ]
     }
