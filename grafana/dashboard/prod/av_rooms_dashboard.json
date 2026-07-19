@@ -1164,7 +1164,7 @@
           "refId": "A",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[$__rate_interval]))",
+          "expr": "count(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Connected"
@@ -1177,7 +1177,7 @@
           "refId": "A1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[$__rate_interval]))",
+          "expr": "sum(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Online"
@@ -1190,7 +1190,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[$__rate_interval]))",
+          "expr": "count(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Monitorable"
@@ -1203,14 +1203,15 @@
           "refId": "B1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[$__rate_interval]))",
+          "expr": "sum(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Snmp"
         }
       ],
       "title": "Fleet Connectivity \u2014 Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "5m"
     },
     {
       "datasource": {
@@ -4151,7 +4152,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 32,
@@ -4227,7 +4229,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         }
       ]
     }

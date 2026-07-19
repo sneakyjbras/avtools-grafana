@@ -942,7 +942,7 @@
           "refId": "A",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval]))",
+          "expr": "count(last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Connected"
@@ -955,7 +955,7 @@
           "refId": "A1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval]))",
+          "expr": "sum(last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Online"
@@ -968,7 +968,7 @@
           "refId": "B",
           "editorMode": "code",
           "hide": false,
-          "expr": "count(last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval]))",
+          "expr": "count(last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Monitorable"
@@ -981,14 +981,15 @@
           "refId": "B1",
           "editorMode": "code",
           "hide": false,
-          "expr": "sum(last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval]))",
+          "expr": "sum(last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m]))",
           "instant": false,
           "range": true,
           "legendFormat": "Snmp"
         }
       ],
       "title": "Room Connectivity \u2014 Over Time",
-      "type": "timeseries"
+      "type": "timeseries",
+      "interval": "5m"
     },
     {
       "datasource": {
@@ -4312,7 +4313,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m])))",
               "range": true,
               "instant": false,
               "legendFormat": "ping reporting"
@@ -4324,7 +4325,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval])))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m])))",
               "range": true,
               "instant": false,
               "legendFormat": "snmp reporting"
@@ -4336,7 +4337,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[$__rate_interval])))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{equipmentno=~\"$device\",submitter_environment=\"qa\"}[10m])))",
               "range": true,
               "instant": false,
               "legendFormat": "ping online"
@@ -4375,7 +4376,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         }
       ]
     }

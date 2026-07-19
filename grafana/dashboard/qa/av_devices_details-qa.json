@@ -1599,7 +1599,8 @@
             ]
           }
         ]
-      }
+      },
+      "interval": "5m"
     },
     {
       "id": 120,
@@ -3927,7 +3928,8 @@
           "mode": "multi",
           "sort": "none"
         }
-      }
+      },
+      "interval": "5m"
     },
     {
       "id": 191,
@@ -3981,7 +3983,8 @@
           "mode": "multi",
           "sort": "none"
         }
-      }
+      },
+      "interval": "5m"
     },
     {
       "id": 200,
@@ -4507,7 +4510,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 206,
@@ -4571,7 +4575,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 207,
@@ -4635,7 +4640,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 208,
@@ -4699,7 +4705,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 209,
@@ -4763,7 +4770,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 210,
@@ -4829,7 +4837,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 211,
@@ -4895,7 +4904,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 212,
@@ -4959,7 +4969,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 213,
@@ -5023,7 +5034,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 214,
@@ -5087,7 +5099,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         },
         {
           "id": 215,
@@ -5151,7 +5164,8 @@
               "sort": "none"
             }
           },
-          "pluginVersion": "11.0.0"
+          "pluginVersion": "11.0.0",
+          "interval": "5m"
         }
       ]
     }
