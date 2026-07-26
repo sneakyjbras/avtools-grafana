@@ -34,6 +34,18 @@ validate_json:
       sys.exit(1 if bad else 0)
       PY
 
+# validate_json only proves the files are valid JSON; it cannot catch a broken
+# rawSql. This binds the real PostgreSQL parser (pglast) and parses every SQL
+# string embedded in the dashboards and alert rulegroups, so a syntax error
+# fails CI instead of surfacing as "db query error ... (SQLSTATE 42601)" in a
+# live panel/alert.
+validate_sql:
+  stage: validate
+  image: python:3.11-slim
+  script:
+    - pip install --no-cache-dir pglast
+    - python scripts/validate_sql.py
+
 .grafana-deploy:
   stage: deploy
   image: python:3.11-slim
