@@ -147,3 +147,80 @@ notification per device at the expected repeat interval.
   EAM model change (a "not-networkable / monitoring-exempt" flag) will let you
   exclude devices that legitimately cannot be networked; the SQL's
   `active_devices` CTE is where that exclusion goes.
+
+## Absence vs. zero — the `noDataState` trap (2026-07-30 outage)
+
+**A multi-day total collection outage in both PROD and QA produced zero fired
+alerts.** Every pod reported success; the outage was found by a human noticing
+blank dashboard panels. This section is the durable lesson so nobody
+reintroduces the bug. Read this before adding any new rule over
+`avtools_snmp_devices_*`, or any metric that can stop being emitted entirely.
+
+**Mechanism:** an upstream LanDB API failure emptied the device-fleet cache;
+the reconcile step then deleted the whole fleet table and still exited
+`status=ok` (no failure signal). The next collection cycle saw zero targets
+and short-circuited on `skipped_no_targets` — **before** the point in the code
+where `avtools_snmp_devices_targeted` / `_polled` / `_coverage_ratio` get
+published. The series did not read `0`. It stopped existing.
+
+**Why that defeats a naive threshold rule:** `sum()`, `count()`, and a ratio
+like `sum(polled)/sum(targeted)` all operate on whatever series currently
+exist. If the input series are entirely absent, these aggregations return an
+**empty result set** — Grafana's "NoData" — not a `0` or a `0/0`. `noDataState:
+OK` tells Grafana "an empty result here means the system is healthy," which is
+exactly backwards for these metrics: the *only* reason
+`avtools_snmp_devices_targeted` stops being emitted at all is that collection
+itself is broken. Absence is a stronger, worse signal than a bad number, and
+`OK` was silently converting the worst-case outage into a green dashboard.
+
+**The one-line test before you set `noDataState: OK` on a new rule:** *"Can
+this series legitimately disappear for a reason other than the failure I'm
+trying to catch?"* If no — if vanishing IS the failure — `noDataState` must
+never be `OK`. Use `Alerting` (this repo's default choice) unless there is a
+genuine, deliberate, recurring idle window for that specific rule (there isn't
+one for the SNMP fleet metrics today: QA runs a real ~1372-device fleet on the
+same 5-minute cycle as PROD, so "no data" is never an expected steady state in
+either environment).
+
+**Two different fixes for two different failure modes, both required:**
+
+1. **Absence** — fixed by `noDataState`. Changed `OK` → `Alerting` on
+   `avtools-slo.rulegroup.PUT.json` (`AV SLO: Collection Coverage Below 99%`,
+   `AV SLO: Collection Coverage Below 95%`, `AV SLO: Targeted Device Count
+   Dropped`) and `avtools-k8s-slo.rulegroup.PUT.json` (`AV SLO: Blind Shard`).
+   These four all aggregate over a metric that can vanish outright, and their
+   `noDataState: OK` was the direct cause of the silent outage.
+2. **Explicit zero** — NOT fixed by `noDataState`, because a real sample
+   with value `0` is present data, not absent data. An app-side change
+   (tracked separately) will make the skipped-fleet path publish an explicit
+   `0` instead of dropping the series. Once that ships, the coverage-ratio
+   rules would see `sum(polled)/sum(targeted)` as a literal `0/0`, which
+   Prometheus evaluates to `NaN` — and Grafana's threshold evaluator treats a
+   `NaN` comparison (`lt 0.99`, etc.) as **false**, i.e. Normal, not Alerting
+   and not NoData. A ratio rule can go silent again on a clean explicit zero
+   even with `noDataState: Alerting` fixed. That's why `AV SLO: Targeted Fleet
+   Empty (Zero Devices for 10m)` (`avslofleetempty`) exists as its own rule: it
+   queries the raw `sum(avtools_snmp_devices_targeted{...})` — no division —
+   and applies Grafana's `eq 0` evaluator directly to it, plus
+   `noDataState: Alerting`. That combination fires identically whether the
+   series is absent (pre-fix, or any future regression that drops it again)
+   or present-and-zero (post-fix). Do not add a "just check `== 0`" guard by
+   dividing anything by the metric; query it raw and compare with the
+   Grafana evaluator instead, or the same `NaN` trap resurfaces.
+
+**What was already correct, and why — don't "fix" these by analogy:**
+`AV SLO: SNMP Collection Stale (No Cycle in 10m)` and `AV SLO: LanDB Inventory
+Sync Stale (No Success in 10m)` keep `noDataState: OK`. Their PromQL is
+`absent_over_time(metric[10m])`, which is the inverse trick: it converts
+absence itself into an explicit numeric sample (`1`) *inside the query*, so by
+the time Grafana's evaluator runs, data is never actually missing — there is
+always a real number to test with `gt 0`. The trap in this document is about
+rules where Grafana's own no-data handling is the only thing standing between
+an absent series and a fired alert; these two rules never put Grafana in that
+position, so leave their exprs and `noDataState` alone.
+
+**`execErrState` is intentionally untouched (`Error` everywhere).** It governs
+query/datasource execution failures (timeouts, malformed queries, the
+datasource being unreachable), which is a different failure axis from a
+metric's absence. `Error` already fails loud/visibly and is consistent across
+every rule in this repo; there is no absence-vs-zero interaction here to fix.

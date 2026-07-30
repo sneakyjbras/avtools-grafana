@@ -78,7 +78,7 @@
           }
         }
       ],
-      "noDataState": "OK",
+      "noDataState": "Alerting",
       "execErrState": "Error",
       "for": "5m",
       "annotations": {
