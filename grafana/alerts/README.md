@@ -97,6 +97,20 @@ embed secrets in `rawSql`.
 
 ---
 
+## `noDataState` — absence is not zero
+
+Never set `noDataState: OK` on a rule whose metric can stop being emitted
+entirely as its failure mode (as opposed to degrading to a bad-but-present
+number). A Prometheus aggregation (`sum`, `count`, a ratio) over an absent
+series returns **no data**, not `0` — and `OK` reads that as healthy. This
+exact gap caused a multi-day undetected outage on 2026-07-30: see "Absence
+vs. zero — the `noDataState` trap" in `ALERTS_NOTES.md` before adding or
+reviewing any rule in `avtools-slo.rulegroup.PUT.json` /
+`avtools-k8s-slo.rulegroup.PUT.json`, or any new rule over a metric that a
+CronJob might stop publishing outright.
+
+---
+
 ## Troubleshooting
 
 - **"interval (0s) should be non-zero…"** — `interval` must be integer seconds
