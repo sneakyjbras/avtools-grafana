@@ -26,7 +26,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "avtools_pdu_query_outlet_current_amps{submitter_environment=\"prod\"} > 12",
+            "expr": "last_over_time(avtools_pdu_query_outlet_current_amps{submitter_environment=\"prod\"}[30m]) > 12",
             "instant": true,
             "range": false,
             "intervalMs": 1000,

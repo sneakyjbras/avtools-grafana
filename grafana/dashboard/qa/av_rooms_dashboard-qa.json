@@ -3951,7 +3951,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max(avtools_snmp_coverage_ratio{submitter_environment=\"qa\"})",
+              "expr": "max(last_over_time(avtools_snmp_coverage_ratio{submitter_environment=\"qa\"}[15m]))",
               "range": true,
               "instant": false
             }
@@ -4022,7 +4022,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "min((time() - timestamp(avtools_snmp_devices_targeted{submitter_environment=\"qa\"}))/60)",
+              "expr": "min((time() - timestamp(last_over_time(avtools_snmp_devices_targeted{submitter_environment=\"qa\"}[6h])))/60)",
               "range": true,
               "instant": false
             }
@@ -4093,7 +4093,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max(avtools_snmp_coverage_ratio{submitter_environment=\"qa\"})",
+              "expr": "max(last_over_time(avtools_snmp_coverage_ratio{submitter_environment=\"qa\"}[15m]))",
               "range": true,
               "instant": false,
               "legendFormat": "coverage"
@@ -4181,7 +4181,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max(avtools_snmp_devices_targeted{submitter_environment=\"qa\"})",
+              "expr": "max(last_over_time(avtools_snmp_devices_targeted{submitter_environment=\"qa\"}[15m]))",
               "range": true,
               "instant": false,
               "legendFormat": "targeted"
@@ -4193,7 +4193,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max(avtools_snmp_devices_polled{submitter_environment=\"qa\"})",
+              "expr": "max(last_over_time(avtools_snmp_devices_polled{submitter_environment=\"qa\"}[15m]))",
               "range": true,
               "instant": false,
               "legendFormat": "polled"
