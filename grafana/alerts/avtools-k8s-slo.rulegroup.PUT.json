@@ -9,7 +9,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-k8s-slo",
-      "title": "AV SLO: Blind Shard (Fewer Shards Reporting Than Recent Peak)",
+      "title": "AV SLO: Blind Shard (Critical Tier, Fewer Shards Reporting Than Recent Peak)",
       "condition": "Active",
       "data": [
         {
@@ -26,7 +26,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "count(count by (shard) (avtools_snmp_devices_targeted{submitter_environment=\"prod\"})) < max_over_time(count(count by (shard) (avtools_snmp_devices_targeted{submitter_environment=\"prod\"}))[1h:5m])",
+            "expr": "max_over_time(count(count by (shard) (avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"}))[1h:5m]) - count(count by (shard) (avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"}))",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -84,8 +84,8 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Blind-shard SLO (K8s availability)\n  The number of distinct `shard` values reporting `avtools_snmp_devices_targeted` fell below its trailing-hour peak. Under static hash-sharding a dead shard is NOT covered by the others, so its slice of the fleet goes silently unpolled. The fleet coverage ratio can still read ~1.0 (it only sums the shards that DID report), so this rule is the one that catches a missing shard. Self-calibrating: no hard-coded N.\n  Action: check the Indexed Job / CronJob for a failed or non-scheduled shard index; confirm `completions` == `--shard-total`.",
-        "summary": "A collection shard stopped reporting (blind spot in the fleet): {{ $values.C.Value }} shards vs recent peak"
+        "description": "- Blind-shard SLO (K8s availability), critical tier\n  The number of distinct `shard` values reporting `avtools_snmp_devices_targeted` for the critical tier fell below its trailing-hour peak. Under static hash-sharding a dead shard is NOT covered by the others, so its slice of the fleet goes silently unpolled. The fleet coverage ratio can still read ~1.0 (it only sums the shards that DID report), so this rule is the one that catches a missing shard. Self-calibrating: no hard-coded N.\n  Scoped to one tier because the tiers have different shard totals (8/4/4/2) and an untiered `count by (shard)` counts the UNION of shard index values: the always-fresh critical tier alone keeps that union at 8, so a shard lost by any other tier is invisible.\n  Matcher note: `tier=~\"critical|\"` carries an empty alternation branch so it also matches series with no `tier` label - which is every series until the tiered CronJobs deploy (the app attaches `tier` only when `--priority != all`). A bare `{tier=\"critical\"}` would select nothing today. Today's single `--priority all` job is the critical tier's predecessor (same `*/5` schedule, same 8 x 16 sizing), so this rule's behaviour is unchanged until the split and correctly narrows to snmp-critical after it.\n  Expressed as `max_over_time(...) - count(...)` (a subtraction) rather than `count(...) < max_over_time(...)` (a filtering comparison). A filtering comparison returns an empty result when every shard is healthy, which Grafana reports as NoData, and this rule's `noDataState: Alerting` would then page on every healthy evaluation. The subtraction always yields a number while the metric exists (0 = healthy), so NoData here again means only that the metric stopped being published at all, which is exactly what `Alerting` is for. The value is now the number of MISSING shards.\n  Action: check the Indexed Job / CronJob for a failed or non-scheduled shard index; confirm `completions` == `--shard-total`.",
+        "summary": "{{ $values.C.Value }} critical-tier collection shard(s) stopped reporting (blind spot in the fleet)"
       },
       "labels": {
         "av_alert_type": "slo",
@@ -107,11 +107,114 @@
     },
     {
       "id": 0,
+      "uid": "avslok8sblindshardslow",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Blind Shard (High/Medium/Low Tiers, Fewer Shards Reporting Than 24h Peak)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#BlindShardSlow",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 90000,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "count by (tier) (count by (tier, shard) (max_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"high|medium|low\"}[24h]))) - count by (tier) (count by (tier, shard) (avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"high|medium|low\"}))",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#BlindShardSlow"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#BlindShardSlow",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Blind-shard SLO (K8s availability), high / medium / low tiers\n  Same intent as the critical-tier rule, but the lookback is 24h instead of 1h and the reference is 'distinct shards seen in 24h' rather than 'peak simultaneous count in the last hour'. A 1h lookback is blind for these tiers: the medium tier runs once an hour and the low tier once every 6 hours, so a 1h window contains at most one run and `max_over_time` degenerates to the current value, which can never be less than itself. 24h contains ~96 high runs, 24 medium runs and 4 low runs.\n  `max_over_time(metric[24h])` over the raw series (a range vector) rather than a `[24h:5m]` subquery: the subquery would re-evaluate a double aggregation 288 times per rule evaluation, and a coarser step would step straight over the ~5-minute window in which a medium/low tier's series is current.\n  Grouped `by (tier)`: each tier is compared only against its own shard total (4/4/2), and a tier that is simply not currently running drops out of the subtraction instead of being reported as blind.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Caveat inherited from the self-calibrating design: an intentional reduction of `--shard-total` for one of these tiers will fire this rule for 24h until the peak ages out.\n  Action: check the Indexed Job / CronJob of the tier named on the alert for a failed or non-scheduled shard index; confirm `completions` == `--shard-total`.",
+        "summary": "{{ $values.C.Value }} collection shard(s) stopped reporting on tier {{ $labels.tier }} (blind spot in the fleet)"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder",
+          "tier"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
       "uid": "avslok8ssweepbudget",
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-k8s-slo",
-      "title": "AV SLO: Sweep Over Freshness Budget (Slowest Shard > 200s)",
+      "title": "AV SLO: Sweep Over Freshness Budget (Critical Tier, Slowest Shard > 100s)",
       "condition": "Active",
       "data": [
         {
@@ -128,7 +231,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\"}) > 200",
+            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"critical|\"}) > 100",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -186,8 +289,314 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Sweep-budget SLO (freshness objective)\n  The slowest shard's collection (sweep) phase exceeded the 200s freshness budget for a sustained period (headroom under the 240s activeDeadlineSeconds). Freshness is bounded by the slowest shard, so this is the leading indicator that the 5-min cycle objective is regressing.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads. Tune the 200s threshold to your actual freshness target.",
-        "summary": "Slowest shard sweep {{ $values.C.Value }}s exceeds the 200s freshness budget"
+        "description": "- Sweep-budget SLO (freshness objective), critical tier\n  The slowest critical-tier shard's collection (sweep) phase exceeded its 100s freshness budget for a sustained period. Freshness is bounded by the slowest shard, so this is the leading indicator that the 5-min cycle objective is regressing.\n  One global threshold across tiers is meaningless once the tiers have deliberately different sweep times (40s / 80s / 160s / 320s projected). An untiered `max()` takes the slowest tier, so the low tier would trip any critical-sized budget every 6 hours. Each budget below is set halfway between that tier's projected sweep and its pod's `activeDeadlineSeconds`, so it is far enough above normal not to be noise and far enough below the kill to be a leading indicator rather than a post-mortem.\n  Critical: measured sweep ~40s, `activeDeadlineSeconds` 150 -> budget 100s. Note the previous global threshold of 200s was ABOVE the critical tier's own 150s deadline, so it was dead code: the pod is killed at 150s and can never publish a 200s duration.\n  Matcher note: `tier=~\"critical|\"` carries an empty alternation branch so it also matches series with no `tier` label - which is every series until the tiered CronJobs deploy (the app attaches `tier` only when `--priority != all`). A bare `{tier=\"critical\"}` would select nothing today. Today's single `--priority all` job is the critical tier's predecessor (same `*/5` schedule, same 8 x 16 sizing), so this rule's behaviour is unchanged until the split and correctly narrows to snmp-critical after it.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads.",
+        "summary": "Slowest critical-tier shard sweep {{ $values.C.Value }}s exceeds the 100s freshness budget"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslok8ssweepbudgethigh",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Sweep Over Freshness Budget (High Tier, Slowest Shard > 150s)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SweepBudgetHigh",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"high\"}) > 150",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SweepBudgetHigh"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SweepBudgetHigh",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Sweep-budget SLO (freshness objective), high tier (`3-59/15`, 4 shards x 16 threads)\n  The slowest high-tier shard's sweep exceeded its 150s budget.\n  One global threshold across tiers is meaningless once the tiers have deliberately different sweep times (40s / 80s / 160s / 320s projected). An untiered `max()` takes the slowest tier, so the low tier would trip any critical-sized budget every 6 hours. Each budget below is set halfway between that tier's projected sweep and its pod's `activeDeadlineSeconds`, so it is far enough above normal not to be noise and far enough below the kill to be a leading indicator rather than a post-mortem.\n  High: projected sweep ~80s, `activeDeadlineSeconds` 220 -> budget 150s.\n  `for` is `0s` here, not `10m`: this tier publishes once per cycle and Prometheus keeps the sample current for only ~5 minutes, so at a 300s group interval a pending period longer than 0s could never be satisfied and the rule would never fire.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads for snmp-high.",
+        "summary": "Slowest high-tier shard sweep {{ $values.C.Value }}s exceeds the 150s freshness budget"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslok8ssweepbudgetmedium",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Sweep Over Freshness Budget (Medium Tier, Slowest Shard > 240s)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SweepBudgetMedium",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"medium\"}) > 240",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SweepBudgetMedium"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SweepBudgetMedium",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Sweep-budget SLO (freshness objective), medium tier (`7 * * * *` hourly, 4 shards x 8 threads)\n  The slowest medium-tier shard's sweep exceeded its 240s budget.\n  One global threshold across tiers is meaningless once the tiers have deliberately different sweep times (40s / 80s / 160s / 320s projected). An untiered `max()` takes the slowest tier, so the low tier would trip any critical-sized budget every 6 hours. Each budget below is set halfway between that tier's projected sweep and its pod's `activeDeadlineSeconds`, so it is far enough above normal not to be noise and far enough below the kill to be a leading indicator rather than a post-mortem.\n  Medium: projected sweep ~160s, `activeDeadlineSeconds` 320 -> budget 240s.\n  `for` is `0s` here, not `10m`: this tier publishes once per cycle and Prometheus keeps the sample current for only ~5 minutes, so at a 300s group interval a pending period longer than 0s could never be satisfied and the rule would never fire.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads for snmp-medium.",
+        "summary": "Slowest medium-tier shard sweep {{ $values.C.Value }}s exceeds the 240s freshness budget"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslok8ssweepbudgetlow",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Sweep Over Freshness Budget (Low Tier, Slowest Shard > 760s)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SweepBudgetLow",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"low\"}) > 760",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SweepBudgetLow"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SweepBudgetLow",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Sweep-budget SLO (freshness objective), low tier (`11 */6 * * *`, 2 shards x 8 threads)\n  The slowest low-tier shard's sweep exceeded its 760s budget.\n  One global threshold across tiers is meaningless once the tiers have deliberately different sweep times (40s / 80s / 160s / 320s projected). An untiered `max()` takes the slowest tier, so the low tier would trip any critical-sized budget every 6 hours. Each budget below is set halfway between that tier's projected sweep and its pod's `activeDeadlineSeconds`, so it is far enough above normal not to be noise and far enough below the kill to be a leading indicator rather than a post-mortem.\n  Low: projected sweep ~320s, `activeDeadlineSeconds` 1200 -> budget 760s.\n  `for` is `0s` here, not `10m`: this tier publishes once per cycle and Prometheus keeps the sample current for only ~5 minutes, so at a 300s group interval a pending period longer than 0s could never be satisfied and the rule would never fire.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Action: check shard skew (below), device/UDP saturation, or raise `--shard-total` / threads for snmp-low.",
+        "summary": "Slowest low-tier shard sweep {{ $values.C.Value }}s exceeds the 760s freshness budget"
       },
       "labels": {
         "av_alert_type": "slo",
@@ -213,7 +622,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-k8s-slo",
-      "title": "AV SLO: Shard Skew (Slowest Shard > 2x the Average)",
+      "title": "AV SLO: Shard Skew (Critical Tier, Slowest Shard > 2x the Average)",
       "condition": "Active",
       "data": [
         {
@@ -230,7 +639,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "(max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\"}) / avg(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\"})) > 2",
+            "expr": "(max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"critical|\"}) / avg(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"critical|\"})) > 2",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -288,8 +697,213 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Shard-skew SLO (K8s reliability)\n  The slowest shard's sweep took more than 2x the average shard's sweep. Because hash-mod-N balances device COUNTS but not TIME, a shard that happens to own a cluster of slow/dead devices (SNMP timeout waits) runs long while others idle. Static partitioning cannot rebalance mid-run; sustained skew is the signal to move from static shards toward a pull-based work queue.\n  Action: inspect which shard is hot and whether it owns a block of dead devices; consider a work-queue model if this persists.",
-        "summary": "Shard sweep skew {{ $values.C.Value }}x (slowest vs average) exceeds 2x"
+        "description": "- Shard-skew SLO (K8s reliability), critical tier (8 shards)\n  The slowest critical-tier shard's sweep took more than 2x the average critical-tier shard's sweep. Because hash-mod-N balances device COUNTS but not TIME, a shard that happens to own a cluster of slow/dead devices (SNMP timeout waits) runs long while others idle. Static partitioning cannot rebalance mid-run; sustained skew is the signal to move from static shards toward a pull-based work queue.\n  Skew is only meaningful within one tier. An untiered `max/avg` mixes tiers with deliberately different sweep times: 8 critical shards at ~40s together with 2 low shards at ~320s give avg ~96s and max 320s, a ratio of ~3.3, i.e. a permanent false fire that says nothing about balance.\n  The threshold is a function of the tier's SHARD COUNT, because max/avg is bounded above by the number of shards: with n shards the ratio can never exceed n, so the legacy 2.0 is meaningful for 8 shards, weak for 4 and mathematically unreachable for 2. Each threshold below is calibrated to the same physical meaning as the original - one hot shard running roughly 2.3x the others: 8 shards -> 2.0, 4 shards -> 1.75, 2 shards -> 1.4.\n  Matcher note: `tier=~\"critical|\"` carries an empty alternation branch so it also matches series with no `tier` label - which is every series until the tiered CronJobs deploy (the app attaches `tier` only when `--priority != all`). A bare `{tier=\"critical\"}` would select nothing today. Today's single `--priority all` job is the critical tier's predecessor (same `*/5` schedule, same 8 x 16 sizing), so this rule's behaviour is unchanged until the split and correctly narrows to snmp-critical after it.\n  Action: inspect which shard is hot and whether it owns a block of dead devices; consider a work-queue model if this persists.",
+        "summary": "Critical-tier shard sweep skew {{ $values.C.Value }}x (slowest vs average) exceeds 2x"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslok8sshardskewhighmed",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Shard Skew (High/Medium Tiers, Slowest Shard > 1.75x the Average)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#ShardSkewHighMed",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "(max by (tier) (avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"high|medium\"}) / avg by (tier) (avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"high|medium\"})) > 1.75",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#ShardSkewHighMed"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#ShardSkewHighMed",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Shard-skew SLO (K8s reliability), high and medium tiers (4 shards each)\n  The slowest shard's sweep took more than 1.75x the average shard's sweep within its own tier.\n  Skew is only meaningful within one tier. An untiered `max/avg` mixes tiers with deliberately different sweep times: 8 critical shards at ~40s together with 2 low shards at ~320s give avg ~96s and max 320s, a ratio of ~3.3, i.e. a permanent false fire that says nothing about balance.\n  The threshold is a function of the tier's SHARD COUNT, because max/avg is bounded above by the number of shards: with n shards the ratio can never exceed n, so the legacy 2.0 is meaningful for 8 shards, weak for 4 and mathematically unreachable for 2. Each threshold below is calibrated to the same physical meaning as the original - one hot shard running roughly 2.3x the others: 8 shards -> 2.0, 4 shards -> 1.75, 2 shards -> 1.4.\n  High and medium share one rule because the threshold is set by their shard count (4) and they have the same one; `by (tier)` still evaluates and alerts on them independently.\n  `for` is `0s` here, not `10m`: these tiers publish once per cycle (15m / 1h) and Prometheus keeps a sample current for only ~5 minutes, so a pending period longer than 0s could never be satisfied at a 300s group interval.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Action: inspect which shard is hot and whether it owns a block of dead devices; consider a work-queue model if this persists.",
+        "summary": "Shard sweep skew {{ $values.C.Value }}x (slowest vs average) exceeds 1.75x on tier {{ $labels.tier }}"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder",
+          "tier"
+        ],
+        "group_wait": "30s",
+        "group_interval": "5m",
+        "repeat_interval": "2h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslok8sshardskewlow",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-k8s-slo",
+      "title": "AV SLO: Shard Skew (Low Tier, Slowest Shard > 1.4x the Average)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#ShardSkewLow",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "(max(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"low\"}) / avg(avtools_snmp_cycle_duration_seconds{submitter_environment=\"prod\", tier=~\"low\"})) > 1.4",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#ShardSkewLow"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#ShardSkewLow",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Shard-skew SLO (K8s reliability), low tier (2 shards)\n  The slowest low-tier shard's sweep took more than 1.4x the average low-tier shard's sweep.\n  Skew is only meaningful within one tier. An untiered `max/avg` mixes tiers with deliberately different sweep times: 8 critical shards at ~40s together with 2 low shards at ~320s give avg ~96s and max 320s, a ratio of ~3.3, i.e. a permanent false fire that says nothing about balance.\n  The threshold is a function of the tier's SHARD COUNT, because max/avg is bounded above by the number of shards: with n shards the ratio can never exceed n, so the legacy 2.0 is meaningful for 8 shards, weak for 4 and mathematically unreachable for 2. Each threshold below is calibrated to the same physical meaning as the original - one hot shard running roughly 2.3x the others: 8 shards -> 2.0, 4 shards -> 1.75, 2 shards -> 1.4.\n  With only 2 shards max/avg is bounded by 2 and reaches it only if one shard reports 0, so the legacy 2.0 threshold could never fire for this tier. 1.4 corresponds to one shard running ~2.3x the other, the same physical meaning 2.0 carries at 8 shards.\n  `for` is `0s` here, not `10m`: this tier publishes once every 6 hours and Prometheus keeps the sample current for only ~5 minutes, so a pending period longer than 0s could never be satisfied.\n  This rule is deliberately DORMANT until the tier split: its matcher has no empty alternation branch, so it selects nothing while `tier` does not exist, and a filtering comparison over nothing is NoData. That is only safe because `noDataState` is `OK` here - which is itself only correct because these tiers' series are legitimately absent most of the time by design (a 6-hourly tier's series is current for ~5 of every 360 minutes, given Prometheus' 5-min staleness). Absence for these tiers is covered instead by the per-tier `SNMP Collection Stale` rules, which use `absent_over_time` and are immune to the NoData trap. Do NOT copy this bare-matcher pattern onto a rule with `noDataState: Alerting`.\n  Action: inspect which shard is hot and whether it owns a block of dead devices; consider a work-queue model if this persists.",
+        "summary": "Low-tier shard sweep skew {{ $values.C.Value }}x (slowest vs average) exceeds 1.4x"
       },
       "labels": {
         "av_alert_type": "slo",
