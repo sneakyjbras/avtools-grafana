@@ -78,7 +78,7 @@
           }
         }
       ],
-      "noDataState": "OK",
+      "noDataState": "Alerting",
       "execErrState": "Error",
       "for": "0s",
       "annotations": {
@@ -180,7 +180,7 @@
           }
         }
       ],
-      "noDataState": "OK",
+      "noDataState": "Alerting",
       "execErrState": "Error",
       "for": "0s",
       "annotations": {
@@ -588,7 +588,7 @@
           }
         }
       ],
-      "noDataState": "OK",
+      "noDataState": "Alerting",
       "execErrState": "Error",
       "for": "10m",
       "annotations": {
@@ -600,6 +600,108 @@
       "labels": {
         "av_alert_type": "slo",
         "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "168h",
+        "repeat_interval": "168h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslofleetempty",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-slo",
+      "title": "AV SLO: Targeted Fleet Empty (Zero Devices for 10m)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#FleetEmpty",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 600,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#FleetEmpty"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "eq"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#FleetEmpty",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "Alerting",
+      "execErrState": "Error",
+      "for": "10m",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- Fleet-empty guardrail (SLO)\n  avtools_snmp_devices_targeted has read 0 (or been entirely absent) for a sustained 10m while the snmp-timeseries job is still nominally running — the device fleet used for collection is empty. This is the explicit backstop for the 2026-07-30 outage class: an upstream LanDB/EAM fetch failure emptied the fleet table, run-landb still exited status=ok, and snmp-timeseries short-circuited on skipped_no_targets *before* publishing any metric, so the series vanished instead of reading zero. Coverage-ratio SLOs read as 0/0 (no data) in that case; this rule fires on either outcome — explicit zero once the app emits it on the skipped path, or absence before/without that fix.\n  Action: check run-eam / run-landb for a swallowed upstream fetch failure (its own freshness alert may not have caught it if the run still logged status=ok) and check the snmp-timeseries CronJob logs for skipped_no_targets.",
+        "summary": "No devices are being targeted for SNMP collection — the fleet reads empty or absent"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "critical",
         "av_alert_family": "slo"
       },
       "isPaused": false,
