@@ -26,7 +26,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "avtools_pdu_query_temperature_c{submitter_environment=\"prod\"} > 32",
+            "expr": "last_over_time(avtools_pdu_query_temperature_c{submitter_environment=\"prod\"}[15m]) > 32",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -128,7 +128,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "(avtools_pdu_query_temperature_c{submitter_environment=\"prod\"} > 27) <= 32",
+            "expr": "(last_over_time(avtools_pdu_query_temperature_c{submitter_environment=\"prod\"}[15m]) > 27) <= 32",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -230,7 +230,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "(avtools_pdu_query_humidity_pct{submitter_environment=\"prod\"} < 20) or (avtools_pdu_query_humidity_pct{submitter_environment=\"prod\"} > 80)",
+            "expr": "(last_over_time(avtools_pdu_query_humidity_pct{submitter_environment=\"prod\"}[15m]) < 20) or (last_over_time(avtools_pdu_query_humidity_pct{submitter_environment=\"prod\"}[15m]) > 80)",
             "instant": true,
             "range": false,
             "intervalMs": 1000,

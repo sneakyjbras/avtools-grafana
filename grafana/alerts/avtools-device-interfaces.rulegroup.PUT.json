@@ -26,7 +26,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "avtools_device_if_oper_status{submitter_environment=\"prod\"} == 2",
+            "expr": "last_over_time(avtools_device_if_oper_status{submitter_environment=\"prod\"}[15m]) == 2",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
