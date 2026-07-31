@@ -1336,7 +1336,7 @@
           "editorMode": "code",
           "hide": false,
           "legendFormat": "__auto",
-          "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"prod\"}[6h]))*1000)",
+          "expr": "max by (equipmentno) (timestamp(avtools_ping_check_status{equipmentno=\"$device\",submitter_environment=\"prod\"})*1000)",
           "instant": true,
           "range": false
         }
@@ -4223,7 +4223,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"prod\"}[6h]))*1000)",
+              "expr": "max by (equipmentno) (timestamp(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"prod\"})*1000)",
               "range": true,
               "instant": false,
               "legendFormat": "Last Sample"
@@ -4287,7 +4287,7 @@
                 "uid": "afcql1n10tnggc"
               },
               "editorMode": "code",
-              "expr": "min by (equipmentno) ((time() - timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"prod\"}[6h])))/60)",
+              "expr": "min by (equipmentno) ((time() - timestamp(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"prod\"}))/60)",
               "range": true,
               "instant": false,
               "legendFormat": "Minutes Since Sample"
