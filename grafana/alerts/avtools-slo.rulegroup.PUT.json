@@ -26,7 +26,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "sum(avtools_snmp_devices_polled{submitter_environment=\"prod\"}) / sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
+            "expr": "sum by (tier) (avtools_snmp_devices_polled{submitter_environment=\"prod\"}) / sum by (tier) (avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -84,8 +84,8 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Coverage SLO (warning)\n  polled/targeted dropped below 0.99. Some targeted devices were not polled this cycle.\n  Action: check for over-concurrency / UDP loss (ramp `threads` down) or a collection error.",
-        "summary": "SNMP collection coverage {{ $values.C.Value }} is below the 0.99 SLO"
+        "description": "- Coverage SLO (warning), per collection tier\n  polled/targeted dropped below 0.99 for one tier. Some targeted devices were not polled in that tier's cycle.\n  Grouped `by (tier)` instead of one cross-tier ratio: after the tier split all four snmp CronJobs sweep the same fleet and each publishes its own polled/targeted pair, so a summed ratio stays ~1.0 even while one tier collapses entirely - the failure is averaged away. `by (tier)` is also the safe idiom across the split itself: until the tiered jobs deploy no series carries a `tier` label at all, every series groups into a single unlabelled instance, and this rule reads exactly as the untiered rule did. Never write `{tier=\"critical\"}` here - see the tier-label trap in ALERTS_NOTES.md.\n  Action: check for over-concurrency / UDP loss (ramp `threads` down) or a collection error in the CronJob for the tier named on the alert.",
+        "summary": "SNMP collection coverage {{ $values.C.Value }} is below the 0.99 SLO [tier: {{ $labels.tier }}]"
       },
       "labels": {
         "av_alert_type": "slo",
@@ -97,7 +97,8 @@
         "receiver": "AV Tools",
         "group_by": [
           "alertname",
-          "grafana_folder"
+          "grafana_folder",
+          "tier"
         ],
         "group_wait": "30s",
         "group_interval": "168h",
@@ -128,7 +129,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "sum(avtools_snmp_devices_polled{submitter_environment=\"prod\"}) / sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
+            "expr": "sum by (tier) (avtools_snmp_devices_polled{submitter_environment=\"prod\"}) / sum by (tier) (avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -186,8 +187,8 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Coverage SLO (critical)\n  polled/targeted dropped below 0.95 \u2014 significant silent loss.\n  Action: investigate the collection pipeline immediately.",
-        "summary": "SNMP collection coverage {{ $values.C.Value }} is below the 0.95 SLO"
+        "description": "- Coverage SLO (critical), per collection tier\n  polled/targeted dropped below 0.95 for one tier - significant silent loss in that tier.\n  Grouped `by (tier)` instead of one cross-tier ratio: after the tier split all four snmp CronJobs sweep the same fleet and each publishes its own polled/targeted pair, so a summed ratio stays ~1.0 even while one tier collapses entirely - the failure is averaged away. `by (tier)` is also the safe idiom across the split itself: until the tiered jobs deploy no series carries a `tier` label at all, every series groups into a single unlabelled instance, and this rule reads exactly as the untiered rule did. Never write `{tier=\"critical\"}` here - see the tier-label trap in ALERTS_NOTES.md.\n  Action: investigate the collection pipeline for the tier named on the alert immediately.",
+        "summary": "SNMP collection coverage {{ $values.C.Value }} is below the 0.95 SLO [tier: {{ $labels.tier }}]"
       },
       "labels": {
         "av_alert_type": "slo",
@@ -199,7 +200,8 @@
         "receiver": "AV Tools",
         "group_by": [
           "alertname",
-          "grafana_folder"
+          "grafana_folder",
+          "tier"
         ],
         "group_wait": "30s",
         "group_interval": "168h",
@@ -213,7 +215,7 @@
       "orgID": 12,
       "folderUID": "beuar1of5bo5cf",
       "ruleGroup": "avtools-slo",
-      "title": "AV SLO: SNMP Collection Stale (No Cycle in 10m)",
+      "title": "AV SLO: SNMP Collection Stale (Critical Tier, No Cycle in 10m)",
       "condition": "Active",
       "data": [
         {
@@ -230,7 +232,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\"}[10m])",
+            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"}[10m])",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -288,12 +290,318 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- SNMP freshness SLO\n  No avtools_snmp_devices_targeted sample in 10m (~2 missed 5-min cycles) => the snmp-timeseries collection has stalled.\n  Action: check the snmp-timeseries CronJob.",
-        "summary": "No SNMP collection cycle has completed in the last 5 minutes"
+        "description": "- SNMP freshness SLO, critical tier (`*/5`, 8 shards x 16 threads, ~40s measured sweep)\n  No avtools_snmp_devices_targeted sample from the critical tier in 10m (~2 missed 5-min cycles) => critical-metric collection has stalled.\n  The matcher is `tier=~\"critical|\"`, never `tier=\"critical\"`: the empty alternation branch also matches series that carry no `tier` label at all, which is every series until the tiered CronJobs deploy (the app only attaches `tier` when `--priority != all`). A bare equality matcher would select nothing today and `absent_over_time` of nothing is 1, i.e. an instant false page; the empty branch also keeps this rule quiet during a partial rollout in which an untiered `--priority all` job is still publishing.\n  Per-tier scoping is mandatory after the split: with one untiered `absent_over_time` any single surviving tier keeps the series alive and masks every other tier's death.\n  Action: check the snmp-critical CronJob (before the split: snmp-timeseries).",
+        "summary": "No critical-tier SNMP collection cycle has completed in the last 10 minutes"
       },
       "labels": {
         "av_alert_type": "slo",
         "severity": "critical",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "168h",
+        "repeat_interval": "168h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslosnmpfreshhigh",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-slo",
+      "title": "AV SLO: SNMP Collection Stale (High Tier, No Cycle in 35m)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SnmpStaleHigh",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 2400,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"high|\"}[35m])",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SnmpStaleHigh"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SnmpStaleHigh",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- SNMP freshness SLO, high tier (`3-59/15`, 4 shards x 16 threads, ~80s projected sweep)\n  No high-tier sample in 35m = 2 missed 15-min cycles (30m) plus a 5m margin for the sweep and the publish. Reusing the critical tier's 10m window here would fire for ~10 of every 15 minutes.\n  The matcher is `tier=~\"high|\"`, never `tier=\"high\"`: the empty alternation branch also matches series that carry no `tier` label at all, which is every series until the tiered CronJobs deploy (the app only attaches `tier` when `--priority != all`). A bare equality matcher would select nothing today and `absent_over_time` of nothing is 1, i.e. an instant false page; the empty branch also keeps this rule quiet during a partial rollout in which an untiered `--priority all` job is still publishing.\n  Per-tier scoping is mandatory after the split: with one untiered `absent_over_time` any single surviving tier keeps the series alive and masks every other tier's death.\n  Action: check the snmp-high CronJob.",
+        "summary": "No high-tier SNMP collection cycle has completed in the last 35 minutes"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "168h",
+        "repeat_interval": "168h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslosnmpfreshmedium",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-slo",
+      "title": "AV SLO: SNMP Collection Stale (Medium Tier, No Cycle in 2h15m)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SnmpStaleMedium",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 9000,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"medium|\"}[2h15m])",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SnmpStaleMedium"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SnmpStaleMedium",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- SNMP freshness SLO, medium tier (`7 * * * *` hourly, 4 shards x 8 threads, ~160s projected sweep)\n  No medium-tier sample in 2h15m = 2 missed hourly cycles (2h) plus a 15m margin for the ~3-min sweep and schedule jitter. A 10m window is nonsense for an hourly tier - it would be true for ~50 minutes of every hour.\n  The matcher is `tier=~\"medium|\"`, never `tier=\"medium\"`: the empty alternation branch also matches series that carry no `tier` label at all, which is every series until the tiered CronJobs deploy (the app only attaches `tier` when `--priority != all`). A bare equality matcher would select nothing today and `absent_over_time` of nothing is 1, i.e. an instant false page; the empty branch also keeps this rule quiet during a partial rollout in which an untiered `--priority all` job is still publishing.\n  Per-tier scoping is mandatory after the split: with one untiered `absent_over_time` any single surviving tier keeps the series alive and masks every other tier's death.\n  Action: check the snmp-medium CronJob.",
+        "summary": "No medium-tier SNMP collection cycle has completed in the last 2h15m"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
+        "av_alert_family": "slo"
+      },
+      "isPaused": false,
+      "notification_settings": {
+        "receiver": "AV Tools",
+        "group_by": [
+          "alertname",
+          "grafana_folder"
+        ],
+        "group_wait": "30s",
+        "group_interval": "168h",
+        "repeat_interval": "168h"
+      },
+      "record": null
+    },
+    {
+      "id": 0,
+      "uid": "avslosnmpfreshlow",
+      "orgID": 12,
+      "folderUID": "beuar1of5bo5cf",
+      "ruleGroup": "avtools-slo",
+      "title": "AV SLO: SNMP Collection Stale (Low Tier, No Cycle in 12h30m)",
+      "condition": "Active",
+      "data": [
+        {
+          "refId": "#SnmpStaleLow",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 45900,
+            "to": 0
+          },
+          "datasourceUid": "afcql1n10tnggc",
+          "model": {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "afcql1n10tnggc"
+            },
+            "editorMode": "code",
+            "expr": "absent_over_time(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"low|\"}[12h30m])",
+            "instant": true,
+            "range": false,
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "#SnmpStaleLow"
+          }
+        },
+        {
+          "refId": "Active",
+          "queryType": "",
+          "relativeTimeRange": {
+            "from": 0,
+            "to": 0
+          },
+          "datasourceUid": "__expr__",
+          "model": {
+            "conditions": [
+              {
+                "evaluator": {
+                  "params": [
+                    0
+                  ],
+                  "type": "gt"
+                },
+                "operator": {
+                  "type": "and"
+                },
+                "query": {
+                  "params": [
+                    "C"
+                  ]
+                },
+                "reducer": {
+                  "params": [],
+                  "type": "last"
+                },
+                "type": "query"
+              }
+            ],
+            "datasource": {
+              "type": "__expr__",
+              "uid": "__expr__"
+            },
+            "expression": "#SnmpStaleLow",
+            "intervalMs": 1000,
+            "maxDataPoints": 43200,
+            "refId": "Active",
+            "type": "threshold"
+          }
+        }
+      ],
+      "noDataState": "OK",
+      "execErrState": "Error",
+      "for": "0s",
+      "annotations": {
+        "__dashboardUid__": "av_rooms_dashboard",
+        "__panelId__": "900",
+        "description": "- SNMP freshness SLO, low tier (`11 */6 * * *`, 2 shards x 8 threads, ~320s projected sweep)\n  No low-tier sample in 12h30m = 2 missed 6-hourly cycles (12h) plus a 30m margin for the ~5.5-min sweep and schedule jitter. This is a slow-inventory-grade freshness objective, not a paging one.\n  The matcher is `tier=~\"low|\"`, never `tier=\"low\"`: the empty alternation branch also matches series that carry no `tier` label at all, which is every series until the tiered CronJobs deploy (the app only attaches `tier` when `--priority != all`). A bare equality matcher would select nothing today and `absent_over_time` of nothing is 1, i.e. an instant false page; the empty branch also keeps this rule quiet during a partial rollout in which an untiered `--priority all` job is still publishing.\n  Per-tier scoping is mandatory after the split: with one untiered `absent_over_time` any single surviving tier keeps the series alive and masks every other tier's death.\n  Action: check the snmp-low CronJob.",
+        "summary": "No low-tier SNMP collection cycle has completed in the last 12h30m"
+      },
+      "labels": {
+        "av_alert_type": "slo",
+        "severity": "warning",
         "av_alert_family": "slo"
       },
       "isPaused": false,
@@ -536,7 +844,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"}) < (0.90 * avg_over_time(sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"})[1d:10m]))",
+            "expr": "sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"}) < bool (0.90 * avg_over_time(sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"})[1d:10m]))",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -594,7 +902,7 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Targeted-count drop SLO\n  The absolute targeted device count fell below 90% of its trailing-day average while coverage (a ratio) can still read ~1.0 \u2014 i.e. EAM/LanDB returned a shrunken device set and a chunk of the fleet is silently unmonitored.\n  Action: check the last run-eam / run-landb sync and the EAM/LanDB source data.",
+        "description": "- Targeted-count drop SLO (critical tier only)\n  The absolute targeted device count fell below 90% of its trailing-day average while coverage (a ratio) can still read ~1.0 - i.e. EAM/LanDB returned a shrunken device set and a chunk of the fleet is silently unmonitored.\n  Scoped to `tier=~\"critical|\"` and deliberately NOT grouped by tier. All four tiers sweep the same fleet, so one continuously-running tier is sufficient to observe the fleet size, and the critical tier is the only one whose series never goes stale between evaluations (`3.7s x devices/threads` sizing; `*/5` cadence). An untiered `sum()` is actively broken after the split: Prometheus staleness keeps each tier's series alive for ~5 min after it publishes, so the sum oscillates between ~1x and ~4x the fleet while the 1d average settles in between, and the `< 0.9 x avg` test fires permanently. The empty alternation branch keeps the expression correct before the split (no `tier` label exists yet) and keeps the 1d baseline continuous across it, because `sum()` yields the same unlabelled series on both sides.\n  `< bool` (not a bare `<`) is required: a bare filtering comparison returns an EMPTY result when the fleet is healthy, which Grafana reports as NoData, and this rule's `noDataState: Alerting` would turn every healthy evaluation into a page. With `bool` the expression is always 0 or 1 while the metric exists, so NoData once again means only what it should mean here - the metric stopped being published at all - and `noDataState: Alerting` stays correct (see the noDataState trap in ALERTS_NOTES.md).\n  Action: check the last run-eam / run-landb sync and the EAM/LanDB source data.",
         "summary": "Targeted device count dropped >10% vs the trailing-day baseline (possible silent under-monitoring)"
       },
       "labels": {
@@ -638,7 +946,7 @@
               "uid": "afcql1n10tnggc"
             },
             "editorMode": "code",
-            "expr": "sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\"})",
+            "expr": "sum(avtools_snmp_devices_targeted{submitter_environment=\"prod\", tier=~\"critical|\"})",
             "instant": true,
             "range": false,
             "intervalMs": 1000,
@@ -696,8 +1004,8 @@
       "annotations": {
         "__dashboardUid__": "av_rooms_dashboard",
         "__panelId__": "900",
-        "description": "- Fleet-empty guardrail (SLO)\n  avtools_snmp_devices_targeted has read 0 (or been entirely absent) for a sustained 10m while the snmp-timeseries job is still nominally running — the device fleet used for collection is empty. This is the explicit backstop for the 2026-07-30 outage class: an upstream LanDB/EAM fetch failure emptied the fleet table, run-landb still exited status=ok, and snmp-timeseries short-circuited on skipped_no_targets *before* publishing any metric, so the series vanished instead of reading zero. Coverage-ratio SLOs read as 0/0 (no data) in that case; this rule fires on either outcome — explicit zero once the app emits it on the skipped path, or absence before/without that fix.\n  Action: check run-eam / run-landb for a swallowed upstream fetch failure (its own freshness alert may not have caught it if the run still logged status=ok) and check the snmp-timeseries CronJob logs for skipped_no_targets.",
-        "summary": "No devices are being targeted for SNMP collection — the fleet reads empty or absent"
+        "description": "- Fleet-empty guardrail (SLO)\n  avtools_snmp_devices_targeted has read 0 (or been entirely absent) for a sustained 10m while the snmp-timeseries job is still nominally running \u2014 the device fleet used for collection is empty. This is the explicit backstop for the 2026-07-30 outage class: an upstream LanDB/EAM fetch failure emptied the fleet table, run-landb still exited status=ok, and snmp-timeseries short-circuited on skipped_no_targets *before* publishing any metric, so the series vanished instead of reading zero. Coverage-ratio SLOs read as 0/0 (no data) in that case; this rule fires on either outcome \u2014 explicit zero once the app emits it on the skipped path, or absence before/without that fix.\n  Scoped to `tier=~\"critical|\"` after the tier split: summing every tier would let another tier's still-stale non-zero sample (Prometheus keeps a series current for ~5 min after its last publish) hold the sum above zero for minutes after the fleet actually emptied, and would delay or suppress this guardrail. The critical tier publishes every 5 min, so its value is always current, and it sweeps the same fleet as the other three. The empty alternation branch matches today's untiered series, so the rule is unchanged in behaviour until the tiered CronJobs deploy; a bare `{tier=\"critical\"}` would match nothing today and, with `noDataState: Alerting`, page instantly.\n  Action: check run-eam / run-landb for a swallowed upstream fetch failure (its own freshness alert may not have caught it if the run still logged status=ok) and check the snmp-timeseries CronJob logs for skipped_no_targets.",
+        "summary": "No devices are being targeted for SNMP collection \u2014 the fleet reads empty or absent"
       },
       "labels": {
         "av_alert_type": "slo",

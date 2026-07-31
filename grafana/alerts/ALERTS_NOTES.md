@@ -224,3 +224,223 @@ query/datasource execution failures (timeouts, malformed queries, the
 datasource being unreachable), which is a different failure axis from a
 metric's absence. `Error` already fails loud/visibly and is consistent across
 every rule in this repo; there is no absence-vs-zero interaction here to fix.
+
+---
+
+## The `tier` label trap — tier-aware SLO rules (2026-07-30, `feat/tier-aware-slo-alerts`)
+
+*Scope: `avtools-slo.rulegroup.PUT.json` and `avtools-k8s-slo.rulegroup.PUT.json`
+only. Read this together with the `noDataState` section above — the two traps
+compose, and several rules below are only safe because of how they interact.*
+
+### What changed underneath the alerts
+
+The single `snmp-timeseries` CronJob (`*/5`, 8 shards x 16 threads, `--priority
+all`) is being replaced by **four** CronJobs that each run the **same full sweep
+over the same 1375-device fleet** and publish only their own metric tier:
+
+| tier | schedule | shards x threads | sweep | `activeDeadlineSeconds` |
+|---|---|---|---|---|
+| critical | `*/5` | 8 x 16 | ~40s (measured) | 150 |
+| high | `3-59/15` | 4 x 16 | ~80s (projected) | 220 |
+| medium | `7 * * * *` | 4 x 8 | ~160s (projected) | 320 |
+| low | `11 */6 * * *` | 2 x 8 | ~320s (projected) | 1200 |
+
+Sizing model: `duration ~= 3.7s x (devices / threads)`.
+
+The cycle guardrails (`avtools_snmp_devices_targeted`, `_polled`,
+`_coverage_ratio`, `avtools_snmp_cycle_duration_seconds`) are `Priority.ALWAYS`,
+so **all four tiers emit all of them every cycle**. To stop the four emitters
+colliding on one series identity the app attaches a conditional **`tier`** label
+(value = the `--priority` token) — **only when `--priority != "all"`** — beside
+the existing conditional `shard` label (present when `shard_total > 1`).
+
+### The trap: `tier` does not exist yet
+
+Production still runs `--priority all`, so **no `tier` label exists on any series
+today**, and the tiered CronJobs may deploy days after these rules do. Every rule
+must therefore be correct in three states: before the split, during a partial
+rollout, and after.
+
+| Idiom | Before the split | After | Verdict |
+|---|---|---|---|
+| `by (tier)` | every series has an absent/empty `tier`, all collapse into ONE unlabelled instance — reads exactly like the untiered rule | splits into one instance per tier | **safe** |
+| `{tier=~"critical\|"}` | the empty alternation branch matches series with no `tier` label, i.e. everything | matches only `tier="critical"` | **safe** |
+| `{tier="critical"}` | matches **nothing** | matches critical | **UNSAFE — never use** |
+
+Why the bare equality matcher is a live grenade, in two different ways:
+
+1. With `noDataState: Alerting` it selects nothing, the rule evaluates to NoData,
+   and NoData means Alerting — **an immediate false page**, from the very commit
+   that deploys it, for as long as the split takes to ship.
+2. With `absent_over_time()` it is worse and inverted: `absent_over_time` of a
+   selector that matches nothing returns **`1`**, a real sample, so the rule
+   fires *through* `noDataState` entirely. No `noDataState` value can save it.
+
+**Rule: in these two files, a `tier` matcher is always a regex with an empty
+alternation branch (`tier=~"critical|"`), or the rule is deliberately dormant
+(see below). Never `tier="..."`.**
+
+The regex is anchored (`^(?:critical|)$`) and a series with no `tier` label is
+matched as `tier=""`, which is what the empty branch selects. The selector stays
+valid because the metric name is a non-empty matcher.
+
+Reading of the empty branch: **today's single `--priority all` job is the
+critical tier's predecessor** — same `*/5` schedule, same 8 x 16 sizing, same
+fleet. So `tier=~"critical|"` is not a hack, it is the honest statement "the
+critical-cadence sweep, whatever it is currently called".
+
+Known limitation of the empty branch, accepted deliberately: any *untiered*
+emitter (a manual `--priority all` run) satisfies **all four** per-tier freshness
+rules at once, because it matches every `tier=~"<t>|"` selector. Do not leave an
+untiered job scheduled alongside the tiered ones.
+
+### Deliberately dormant rules — and why `noDataState: OK` is right there
+
+Six rules use a **strict** matcher with no empty branch
+(`tier=~"high|medium|low"`, `tier=~"high"`, `tier=~"medium"`, `tier=~"low"`,
+`tier=~"high|medium"`): `avslok8sblindshardslow`, `avslok8ssweepbudget{high,
+medium,low}`, `avslok8sshardskew{highmed,low}`. They select nothing until the
+split and are silent — safe **only because all six carry `noDataState: OK`**.
+
+That is not a regression of the absence-is-broken rule established earlier in
+this document; it passes that section's own one-line test — *"can this series
+legitimately disappear for a reason other than the failure I am trying to
+catch?"* — with a loud **yes**. Prometheus keeps a sample current for ~5 minutes.
+A tier that publishes once an hour therefore has a **live series for ~5 of every
+60 minutes**, and the 6-hourly low tier for ~5 of every 360. Absence is the
+*normal* state for these tiers, so `Alerting` on NoData would page ~92% and ~99%
+of the time respectively.
+
+Absence for those tiers is caught instead by the four
+`AV SLO: SNMP Collection Stale (<tier> Tier, ...)` rules, which use
+`absent_over_time` — the idiom that converts absence into an explicit `1` inside
+the query and never puts Grafana's no-data handling on the critical path.
+
+**Do not copy the strict-matcher pattern onto a rule whose `noDataState` is
+`Alerting`.** The four rules that keep `Alerting` (`avslocoverage{warn,crit}`,
+`avslotargetdrop`, `avslofleetempty`, `avslok8sblindshard`) all use either
+`by (tier)` or an empty-branch matcher, so they select data in every state.
+
+### The second trap this exposed: a filtering comparison is NoData when healthy
+
+`avslotargetdrop` and `avslok8sblindshard` were `A < B` / `count(...) <
+max_over_time(...)` — **filtering** comparisons, which return an *empty vector*
+when the system is healthy. Combined with the `noDataState: Alerting` set on them
+to fix the 2026-07-30 outage, every healthy evaluation was a NoData evaluation
+and therefore a page. Both are now written so the expression **always yields a
+number while the metric exists**:
+
+- `avslotargetdrop`: `sum(...) < bool (0.90 * avg_over_time(sum(...)[1d:10m]))` —
+  `bool` makes it 0/1 instead of empty/value.
+- `avslok8sblindshard`: `max_over_time(...) - count(...)` — a subtraction, whose
+  value is now the **number of missing shards** (0 = healthy).
+
+With those, NoData once again means only what `Alerting` is supposed to catch:
+the metric stopped being published at all. **If you add a rule with
+`noDataState: Alerting`, its expression must never be a bare filtering
+comparison.** Use `bool`, or arithmetic, or the Grafana threshold evaluator on a
+raw value (as `avslofleetempty` does).
+
+### Why `for` is `0s` on every non-critical tier rule
+
+The group `interval` is `300`, so `for: 10m` needs the alert condition to hold
+across **three consecutive** evaluations. A tier that publishes once per cycle
+has a live series for only ~5 minutes, i.e. **one** evaluation. Any pending
+period above `0s` on a high/medium/low rule can never be satisfied and the rule
+would silently never fire. Only the critical tier (`*/5`, continuously fresh)
+keeps `for: 5m` / `for: 10m`.
+
+Corollary: this is why the fleet-shaped rules (`avslotargetdrop`,
+`avslofleetempty`) are scoped to `tier=~"critical|"` rather than grouped by tier.
+All four tiers sweep the *same* fleet, so one continuously-fresh tier observes it
+completely, and the critical tier is the only one whose sample is always current.
+
+### Why an untiered `sum()` over these metrics is actively broken after the split
+
+Because of the same ~5-minute staleness, `sum(avtools_snmp_devices_targeted)`
+without a tier scope oscillates between ~1375 (critical alone), ~2750 (critical
+plus one other) and briefly ~5500, while a trailing-day average settles around
+~1966. `avslotargetdrop`'s `< 0.9 x avg` test would then be true at essentially
+every evaluation — a permanent page. Never sum a `Priority.ALWAYS` guardrail
+across tiers.
+
+### Per-tier windows and thresholds, and where the numbers come from
+
+Freshness windows = **2 missed cycles + a margin for that tier's sweep and
+schedule jitter**. Reusing the critical tier's 10m window on an hourly tier would
+be true for ~50 minutes of every hour.
+
+| rule | tier | window | derivation |
+|---|---|---|---|
+| `avslosnmpfresh` | critical | `10m` | 2 x 5m (unchanged) |
+| `avslosnmpfreshhigh` | high | `35m` | 2 x 15m + 5m |
+| `avslosnmpfreshmedium` | medium | `2h15m` | 2 x 1h + 15m |
+| `avslosnmpfreshlow` | low | `12h30m` | 2 x 6h + 30m |
+
+Sweep budgets = **halfway between that tier's projected sweep and its pod's
+`activeDeadlineSeconds`** — high enough above normal not to be noise, far enough
+below the kill to be a leading indicator rather than a post-mortem.
+
+| rule | tier | sweep | deadline | budget |
+|---|---|---|---|---|
+| `avslok8ssweepbudget` | critical | ~40s | 150 | **100s** |
+| `avslok8ssweepbudgethigh` | high | ~80s | 220 | **150s** |
+| `avslok8ssweepbudgetmedium` | medium | ~160s | 320 | **240s** |
+| `avslok8ssweepbudgetlow` | low | ~320s | 1200 | **760s** |
+
+The old single global `200s` was wrong twice: an untiered `max()` takes the
+slowest tier, so the low tier would trip it every 6 hours; and 200s is *above*
+the critical tier's own 150s `activeDeadlineSeconds`, so for critical the rule
+was already dead code — the pod is killed at 150s and can never publish a 200s
+duration.
+
+Shard-skew thresholds are a function of **shard count, not cadence**: `max/avg`
+is bounded above by the number of shards, so the legacy `2.0` is meaningful at 8
+shards, weak at 4, and *mathematically unreachable* at 2 (a 2-shard tier can only
+reach 2.0 if one shard reports 0). Each threshold is calibrated to the same
+physical meaning the original carried — one hot shard running roughly **2.3x**
+the others.
+
+| rule | tiers | shards | threshold |
+|---|---|---|---|
+| `avslok8sshardskew` | critical | 8 | **2.0** (unchanged) |
+| `avslok8sshardskewhighmed` | high, medium | 4 | **1.75** |
+| `avslok8sshardskewlow` | low | 2 | **1.4** |
+
+### One rule `by (tier)` vs one rule per tier
+
+- **`by (tier)`** where the logic is cadence-independent and the threshold is
+  shared: `avslocoverage{warn,crit}` (a ratio has no window), plus
+  `avslok8sblindshardslow` and `avslok8sshardskewhighmed` where the grouped tiers
+  share a shard count. One rule to maintain, one alert instance per tier.
+  Multi-instance rules add **`tier` to `notification_settings.group_by`** so a
+  degraded medium tier is not folded into the critical tier's notification and
+  swallowed by the `168h` repeat interval.
+- **One rule per tier** wherever the *window* or the *threshold* is derived from
+  that tier's cadence, sweep time or shard count — freshness and sweep budget.
+  A single rule cannot carry four windows.
+
+### Not affected by tiering
+
+`avsloeamfresh` and `avslolandbfresh` are emitted by `run-eam` / `run-landb`,
+which take no `--priority` argument and never carry a `tier` label. Left byte-for
+-byte unchanged. Confirm on the live stack that `avtools_eam_last_run_timestamp`
+and `avtools_landb_last_run_timestamp` really do come back with no `tier` label
+after the split.
+
+### Known pre-existing defects, deliberately NOT changed here
+
+- **`{{ $values.C.Value }}` renders empty in every rule in both groups.**
+  `$values` is keyed by refId, and these rules' refIds are `#Coverage`,
+  `#BlindShard`, ... — there is no `C`. (The `conditions[].query.params: ["C"]`
+  field is vestigial; the threshold node uses `expression`.) The phrasing is kept
+  verbatim in the new rules for consistency; fixing it means either renaming the
+  refIds or writing `{{ (index $values "#BlindShard").Value }}` across all rules,
+  which is a separate change.
+- **`scripts/patch_grafana_rulegroup.py` rewrites `__dashboardUid__` to
+  `av_devices_dashboard`.** Every rule in these two groups annotates
+  `av_rooms_dashboard`, so the PROD render is not a no-op for them and
+  `prod(source) == source` does not hold here (it still round-trips:
+  `prod(qa(x)) == prod(x)`). Pre-existing on `master`; the new rules inherit
+  exactly the same behaviour as their siblings.
