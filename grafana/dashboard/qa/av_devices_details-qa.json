@@ -4225,7 +4225,8 @@
               "editorMode": "code",
               "expr": "max by (equipmentno) (timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))*1000)",
               "range": true,
-              "instant": false
+              "instant": false,
+              "legendFormat": "Last Sample"
             }
           ],
           "fieldConfig": {
@@ -4288,7 +4289,8 @@
               "editorMode": "code",
               "expr": "min by (equipmentno) ((time() - timestamp(last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h])))/60)",
               "range": true,
-              "instant": false
+              "instant": false,
+              "legendFormat": "Minutes Since Sample"
             }
           ],
           "fieldConfig": {
@@ -4359,7 +4361,8 @@
               "editorMode": "code",
               "expr": "max by (equipmentno) (last_over_time(avtools_snmp_probe_status{equipmentno=\"$device\",submitter_environment=\"qa\"}[6h]))",
               "range": true,
-              "instant": false
+              "instant": false,
+              "legendFormat": "SNMP Status"
             }
           ],
           "fieldConfig": {
