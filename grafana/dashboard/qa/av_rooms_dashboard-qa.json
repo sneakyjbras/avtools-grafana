@@ -3803,7 +3803,7 @@
               "mode": "single",
               "sort": "none"
             },
-            "xTickLabelRotation": 0,
+            "xTickLabelRotation": -45,
             "xTickLabelSpacing": 100
           },
           "pluginVersion": "11.5.5",
@@ -3845,8 +3845,10 @@
               "options": {
                 "conversions": [
                   {
+                    "dateFormat": "YYYY",
                     "destinationType": "string",
-                    "targetField": "roomcommissiondate"
+                    "targetField": "roomcommissiondate",
+                    "timezone": "browser"
                   }
                 ],
                 "fields": {}
@@ -3891,8 +3893,8 @@
                 "fields": {},
                 "sort": [
                   {
-                    "desc": true,
-                    "field": "conferenceroomnofmt (count)"
+                    "desc": false,
+                    "field": "roomcommissiondate"
                   }
                 ]
               }
@@ -3905,7 +3907,7 @@
                 "indexByName": {},
                 "renameByName": {
                   "conferenceroomnofmt (count)": "Count",
-                  "roomcommissiondate": "Commission Date"
+                  "roomcommissiondate": "Commission Year"
                 }
               }
             }
