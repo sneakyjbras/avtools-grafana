@@ -638,7 +638,7 @@
           "refId": "E",
           "editorMode": "code",
           "hide": false,
-          "expr": "max by(equipmentno) (timestamp(last_over_time(avtools_ping_check_status{submitter_environment=\"qa\"}[6h]))) * 1000",
+          "expr": "max by(equipmentno) (timestamp(avtools_ping_check_status{submitter_environment=\"qa\"})) * 1000",
           "format": "table",
           "instant": true,
           "range": false,
