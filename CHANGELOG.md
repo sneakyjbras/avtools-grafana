@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] — 2026-07-31
+
+### Fixed
+- **Every "last seen" / "age" panel was reading ~0 regardless of real staleness.** `timestamp(X)`
+  reports a sample's own timestamp only when `X` is a **bare vector selector**; given the output of
+  any function the sample is minted at evaluation time, so `timestamp(last_over_time(m[w])) == time()`
+  and `time() - timestamp(...)` collapses to zero. Introduced by `1919357`, which wrapped instant
+  selectors in `last_over_time()` so panels would survive the move to per-tier refresh rates —
+  correct for value panels, wrong inside `timestamp()`. Unwrapped in 10 expressions (5 panels ×
+  prod/qa): `Device Table` (av_devices), `Last Checked` / `SNMP Last Sample` /
+  `Minutes Since SNMP Sample` (av_devices_details), `Rooms Table` and
+  `Minutes Since Last SNMP Cycle` (av_rooms). Safe to unwrap: every metric involved
+  (`ping_check_status`, `snmp_probe_status`, `snmp_devices_targeted`) is CRITICAL/ALWAYS tier at a
+  5-minute refresh, so the tier split never made them sparse. **These are the panels that would have
+  revealed the 2026-07-30 collection outage, and they would have shown "0 minutes" throughout.**
+- **`Connectivity Breakdown` (av_rooms, panels 25/27) reported impossible numbers.** Three compounding
+  faults: the PromQL targets counted *series* over a `[6h]` window rather than devices, sweeping in
+  every label set seen in six hours; an **unfiltered `reduce`** also hit the Prometheus frames,
+  emitting two same-named fields per frame (the real value and a constant `1`); and the `min`/`max`
+  `reduceRow` steps were silently *choosing between those two fields* rather than doing arithmetic —
+  so `Online` and `Snmp` were pinned at **1** and `Offline` = `Connected − 1`, i.e. the entire
+  connected fleet rendered as offline. Targets now mirror panel 26
+  (`count(max by (equipmentno) (...[15m]))`), `reduce` is scoped by refId, and the final `organize`
+  is rebuilt against what the chain actually emits.
+- **`Devices per Room` and `Coverage & Monitoring Ratios by Room` leaked a `conferenceroomno (count)`
+  column and showed implausible magnitudes.** Both declared `conferenceroomno` as group key *and*
+  counted aggregate, minting an unrenamed duplicate of the per-room device count whose magnitude was
+  the 2,046-device "No position" bucket. Both also stacked series that are subsets or roll-ups of one
+  another, so a 114-device room drew a bar near 400; `Coverage Ratios` percent-stacked three
+  *independent* 0–1 ratios, rendering 100/100/100 as three 33% bands. Stacking is now a true partition
+  (`Online + Offline + Coverage Gap == Total Devices`) and the ratios are unstacked.
+- **`sortBy` on both room panels pointed at `roomrank`, a field no query produces** (the SQL emits
+  `room_sort_rank`, which becomes `room_sort_rank (max)` after `groupBy`) — the sort had been
+  silently inert. `Coverage Ratios` also never excluded `gis` (numeric, 1 per real room) so it was
+  drawn as a fourth ratio, and its `Coverage Gap` `calculateField` had a binary config with **no
+  operator at all**.
+- **Five stat panels rendered raw PromQL as their series name.** `SNMP Coverage (now)` and
+  `Minutes Since Last SNMP Cycle` (av_rooms) plus `SNMP Last Sample`, `Minutes Since SNMP Sample` and
+  `SNMP Status (now)` (av_devices_details) had neither `legendFormat` nor `displayName`, so Grafana
+  fell back to the expression text — tolerable until `1919357` made those expressions much longer.
+
+### Changed
+- The `Unconnected Devices` slice on `Connectivity Breakdown — %` is now **transparent**
+  (was `text`), matching `Network Health — %` and `Snmp Monitoring Health — %` on the AV Devices
+  dashboard. It keeps its share of the circle, its legend entry and its tooltip value while letting
+  the Online/Offline colours carry the read. The bargauge counterpart deliberately keeps normal
+  colours — a transparent bar would simply be invisible.
+
+
 ## [1.10.1] — 2026-07-31
 
 ### Fixed
