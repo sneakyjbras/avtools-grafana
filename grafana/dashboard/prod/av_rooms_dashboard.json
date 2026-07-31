@@ -1232,7 +1232,117 @@
               },
               "mappings": []
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Total Devices"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Connected Devices"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Monitorable"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Snmp"
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": true
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Online"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Offline"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Unconnected Devices"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "text",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 9,
@@ -1306,7 +1416,7 @@
               "refId": "B",
               "editorMode": "code",
               "hide": false,
-              "expr": "count(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "equipmentno"
@@ -1319,7 +1429,7 @@
               "refId": "B2",
               "editorMode": "code",
               "hide": false,
-              "expr": "sum(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "ping_status"
@@ -1332,7 +1442,7 @@
               "refId": "C",
               "editorMode": "code",
               "hide": false,
-              "expr": "sum(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "snmp_status"
@@ -1345,7 +1455,7 @@
               "refId": "C2",
               "editorMode": "code",
               "hide": false,
-              "expr": "count(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "snmp_status_count"
@@ -1354,14 +1464,17 @@
           "title": "Connectivity Breakdown \u2014 %",
           "transformations": [
             {
+              "filter": {
+                "id": "byRefId",
+                "options": "/^A$/"
+              },
               "id": "reduce",
               "options": {
                 "includeTimeField": false,
                 "labelsToFields": false,
                 "mode": "reduceFields",
                 "reducers": [
-                  "count",
-                  "sum"
+                  "count"
                 ]
               }
             },
@@ -1369,7 +1482,7 @@
               "id": "concatenate",
               "options": {
                 "frameNameLabel": "frame",
-                "frameNameMode": "field"
+                "frameNameMode": "drop"
               }
             },
             {
@@ -1379,8 +1492,7 @@
                 "mode": "reduceRow",
                 "reduce": {
                   "include": [
-                    "eameqno Count",
-                    "eameqno Total"
+                    "eameqno"
                   ],
                   "reducer": "sum"
                 },
@@ -1396,7 +1508,7 @@
                   "include": [
                     "equipmentno"
                   ],
-                  "reducer": "max"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1409,7 +1521,7 @@
                   "include": [
                     "ping_status"
                   ],
-                  "reducer": "min"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1422,7 +1534,7 @@
                   "include": [
                     "snmp_status_count"
                   ],
-                  "reducer": "max"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1435,7 +1547,7 @@
                   "include": [
                     "snmp_status"
                   ],
-                  "reducer": "min"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1496,31 +1608,36 @@
                   "Connected Devices": false,
                   "Monitorable": false,
                   "Snmp": false,
+                  "Time": true,
+                  "Time 1": true,
+                  "Time 2": true,
+                  "Time 3": true,
                   "Total Devices": false,
                   "Unconnected Devices": false,
-                  "eameqno Count": true,
-                  "eameqno Total": true,
+                  "eameqno": true,
                   "equipmentno": true,
                   "ping_status": true,
                   "snmp_status": true,
-                  "snmp_status_count": true,
-                  "snmp_status_count Count": true,
-                  "snmp_status_count Total": true
+                  "snmp_status_count": true
                 },
                 "includeByName": {},
                 "indexByName": {
-                  "Connected Devices": 7,
-                  "Monitorable": 10,
-                  "Offline": 9,
-                  "Online": 8,
-                  "Snmp": 11,
-                  "Total Devices": 5,
-                  "Unconnected Devices": 6,
-                  "eameqno Count": 0,
-                  "eameqno Total": 1,
-                  "equipmentno": 2,
-                  "ping_status": 3,
-                  "snmp_status": 4
+                  "Connected Devices": 2,
+                  "Monitorable": 5,
+                  "Offline": 4,
+                  "Online": 3,
+                  "Snmp": 6,
+                  "Time": 7,
+                  "Time 1": 8,
+                  "Time 2": 9,
+                  "Time 3": 10,
+                  "Total Devices": 0,
+                  "Unconnected Devices": 1,
+                  "eameqno": 11,
+                  "equipmentno": 12,
+                  "ping_status": 13,
+                  "snmp_status": 14,
+                  "snmp_status_count": 15
                 },
                 "renameByName": {
                   "Unconnected Devices": ""
@@ -1625,7 +1742,7 @@
               "refId": "B",
               "editorMode": "code",
               "hide": false,
-              "expr": "count(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "equipmentno"
@@ -1638,7 +1755,7 @@
               "refId": "B2",
               "editorMode": "code",
               "hide": false,
-              "expr": "sum(last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_ping_check_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "ping_status"
@@ -1651,7 +1768,7 @@
               "refId": "C",
               "editorMode": "code",
               "hide": false,
-              "expr": "sum(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "sum(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "snmp_status"
@@ -1664,7 +1781,7 @@
               "refId": "C2",
               "editorMode": "code",
               "hide": false,
-              "expr": "count(last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[6h]))",
+              "expr": "count(max by (equipmentno) (last_over_time(avtools_snmp_probe_status{submitter_environment=\"prod\"}[15m])))",
               "instant": true,
               "range": false,
               "legendFormat": "snmp_status_count"
@@ -1673,14 +1790,17 @@
           "title": "Connectivity Breakdown \u2014 Count",
           "transformations": [
             {
+              "filter": {
+                "id": "byRefId",
+                "options": "/^A$/"
+              },
               "id": "reduce",
               "options": {
                 "includeTimeField": false,
                 "labelsToFields": false,
                 "mode": "reduceFields",
                 "reducers": [
-                  "count",
-                  "sum"
+                  "count"
                 ]
               }
             },
@@ -1688,7 +1808,7 @@
               "id": "concatenate",
               "options": {
                 "frameNameLabel": "frame",
-                "frameNameMode": "field"
+                "frameNameMode": "drop"
               }
             },
             {
@@ -1698,8 +1818,7 @@
                 "mode": "reduceRow",
                 "reduce": {
                   "include": [
-                    "eameqno Count",
-                    "eameqno Total"
+                    "eameqno"
                   ],
                   "reducer": "sum"
                 },
@@ -1715,7 +1834,7 @@
                   "include": [
                     "equipmentno"
                   ],
-                  "reducer": "max"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1728,7 +1847,7 @@
                   "include": [
                     "ping_status"
                   ],
-                  "reducer": "min"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1741,7 +1860,7 @@
                   "include": [
                     "snmp_status_count"
                   ],
-                  "reducer": "max"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1754,7 +1873,7 @@
                   "include": [
                     "snmp_status"
                   ],
-                  "reducer": "min"
+                  "reducer": "sum"
                 }
               }
             },
@@ -1815,31 +1934,36 @@
                   "Connected Devices": false,
                   "Monitorable": false,
                   "Snmp": false,
+                  "Time": true,
+                  "Time 1": true,
+                  "Time 2": true,
+                  "Time 3": true,
                   "Total Devices": false,
                   "Unconnected Devices": false,
-                  "eameqno Count": true,
-                  "eameqno Total": true,
+                  "eameqno": true,
                   "equipmentno": true,
                   "ping_status": true,
                   "snmp_status": true,
-                  "snmp_status_count": true,
-                  "snmp_status_count Count": true,
-                  "snmp_status_count Total": true
+                  "snmp_status_count": true
                 },
                 "includeByName": {},
                 "indexByName": {
-                  "Connected Devices": 7,
-                  "Monitorable": 10,
-                  "Offline": 9,
-                  "Online": 8,
-                  "Snmp": 11,
-                  "Total Devices": 5,
-                  "Unconnected Devices": 6,
-                  "eameqno Count": 0,
-                  "eameqno Total": 1,
-                  "equipmentno": 2,
-                  "ping_status": 3,
-                  "snmp_status": 4
+                  "Connected Devices": 2,
+                  "Monitorable": 5,
+                  "Offline": 4,
+                  "Online": 3,
+                  "Snmp": 6,
+                  "Time": 7,
+                  "Time 1": 8,
+                  "Time 2": 9,
+                  "Time 3": 10,
+                  "Total Devices": 0,
+                  "Unconnected Devices": 1,
+                  "eameqno": 11,
+                  "equipmentno": 12,
+                  "ping_status": 13,
+                  "snmp_status": 14,
+                  "snmp_status_count": 15
                 },
                 "renameByName": {
                   "Unconnected Devices": ""
