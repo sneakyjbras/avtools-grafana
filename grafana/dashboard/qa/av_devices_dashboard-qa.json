@@ -4027,7 +4027,7 @@
               "mode": "multi",
               "sort": "none"
             },
-            "xTickLabelRotation": 0,
+            "xTickLabelRotation": -45,
             "xTickLabelSpacing": 100
           },
           "pluginVersion": "11.5.5",
@@ -4068,7 +4068,7 @@
               "options": {
                 "conversions": [
                   {
-                    "dateFormat": "YYYY-MM",
+                    "dateFormat": "YYYY",
                     "destinationType": "string",
                     "targetField": "commissiondate",
                     "timezone": "browser"
@@ -4100,8 +4100,8 @@
                 "fields": {},
                 "sort": [
                   {
-                    "desc": true,
-                    "field": "conferenceroomnofmt (count)"
+                    "desc": false,
+                    "field": "commissiondate"
                   }
                 ]
               }
