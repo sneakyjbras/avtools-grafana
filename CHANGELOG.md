@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] — 2026-07-31
+
+### Fixed
+- **"Commission Date — Count" bar charts were unreadable** on both `av_devices_dashboard`
+  and `av_rooms_dashboard` (QA and prod). Three separate presentation defects, no SQL involved:
+  - **Bucket granularity.** `av_devices` stringified `commissiondate` with `dateFormat: "YYYY-MM"`,
+    producing one bar per month — **205 distinct buckets** against the live data (4,501 devices
+    spanning 2005-04-30 → 2026-07-22). `av_rooms` was worse: its `convertFieldType` carried **no
+    `dateFormat` at all**, so it bucketed on the raw date value. Both now use `"YYYY"` → **22 bars**.
+  - **Sort order.** The `sortBy` transformation ordered by `conferenceroomnofmt (count)` *descending*,
+    so a date axis was rendered in popularity order — which is why the tick labels read as arbitrary
+    strings instead of a timeline. Now ascending by the date field.
+  - **Tick labels** were horizontal (`xTickLabelRotation: 0`) and overlapped. Now `-45`.
+- The `av_rooms` x-axis is relabelled `Commission Date` → **`Commission Year`** to match what is plotted.
+
+### Unchanged
+- No `rawSql` was modified, so every result set and the full Status → Room → Eqclass → Category → Device
+  filter chain behave exactly as before. `colorByField` still resolves in both panels
+  (`conferenceroomnofmt (count)` and `Count`). The QA dashboards carry the byte-identical change.
+
+
 ### Changed
 - **License & Maintainer documentation**: Added `CONTRIBUTING.md` listing José Bras (`jose.bras@cern.ch` / `j.eduardo.bras@outlook.com`, `@jsapinat` / `@sneakyjbras`) as sole maintainer under the MIT License.
 
